@@ -1,0 +1,50 @@
+pipeline {
+  agent any
+
+  tools {
+    maven 'M2_HOME'
+    }
+  
+  stages {
+    stage('CheckOut') {
+      steps {
+        echo 'Checkout the source code from GitHub'
+        git 'https://github.com/sneha070992/star-agile-insurance-project-master.git'
+            }
+    }
+    stage('Build and Package Application') {
+      steps {
+        echo 'Build and Package App'
+        sh 'mvn clean package'
+            }
+    }    
+    stage('Publish Reports using HTML'){
+    steps {
+      echo 'Publishing the HTML Reports'
+      publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '/var/lib/jenkins/workspace/Insurance-Project', reportFiles: 'index.html', reportName: 'HTML Report', reportTitles: '', useWrapperFileDirectly: true])
+          }
+    }    
+    stage('Image Creation') {
+    steps {
+      sh 'docker build -t Snehanka/insurance-project1:latest .'
+          }
+    }   
+    stage('Docker Login') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'Docker-Login', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+        sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}" 
+                    }
+            }
+    }     
+    stage('Push Image to Docker Registory') {
+      steps {
+        sh 'docker push Snehanka/insurance-project1:latest'
+            }
+    }  
+    stage('Execute Ansible Playbook') {
+      steps {
+        ansiblePlaybook credentialsId: 'Ansible-Login', disableHostKeyChecking: true, installation: 'Ansible', inventory: '/etc/ansible/hosts', playbook: 'ansible-deploy.yml'
+            }
+    }       
+}
+}   

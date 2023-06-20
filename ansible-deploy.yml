@@ -1,0 +1,19 @@
+---
+- name: Configure Docker on other EC2 instance
+  hosts: [demo]
+  become: yes
+  tasks:
+  - name: apt update
+    command: apt update
+  - name: Install the Python using Pip
+    command: apt install python-pip -y
+  - name: Installing Docker
+    command: apt install docker.io -y
+    become: yes
+    become_user: root
+  - name: start docker service using systemctl
+    command: systemctl start docker
+    become: yes
+    become_user: root
+  - name: Deploy the Image from DockerHub and run it as Container
+    command: docker run -itd -p 8081:8081 Snehanka/insurance-project1:latest
